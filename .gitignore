@@ -1,0 +1,70 @@
+# Secrets and credentials — NEVER commit these
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+*.jks
+credentials.json
+secrets.json
+service-account*.json
+*-credentials.json
+*.keystore
+api_keys.json
+tokens.json
+
+# OS keychain exports
+*.keychain
+*.keychain-db
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Rust / Tauri
+target/
+Cargo.lock
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.svelte-kit/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/gen/
+
+# SQLite local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Coverage and test
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
