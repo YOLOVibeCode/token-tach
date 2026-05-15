@@ -33,7 +33,6 @@ Thumbs.db
 
 # Rust / Tauri
 target/
-Cargo.lock
 
 # Node / Frontend
 node_modules/
@@ -42,7 +41,6 @@ build/
 .svelte-kit/
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
 
 # Tauri build artifacts
 src-tauri/target/

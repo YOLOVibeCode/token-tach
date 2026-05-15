@@ -83,9 +83,23 @@ for pattern in "${BLOCKED_EXTENSIONS[@]}"; do
   fi
 done
 
-# Check file contents for secret patterns (skip the hook itself)
+# Files that contain secret pattern names as documentation, not actual secrets
+SKIP_CONTENT_SCAN=(
+  ".githooks/pre-commit"
+  "RELEASING.md"
+  "CONTRIBUTING.md"
+)
+
+# Check file contents for secret patterns (skip documentation files)
 for file in $STAGED_FILES; do
-  if [ "$file" = ".githooks/pre-commit" ]; then
+  skip=false
+  for skip_file in "${SKIP_CONTENT_SCAN[@]}"; do
+    if [ "$file" = "$skip_file" ]; then
+      skip=true
+      break
+    fi
+  done
+  if [ "$skip" = true ]; then
     continue
   fi
   if [ -f "$file" ] && file "$file" | grep -q "text"; then
