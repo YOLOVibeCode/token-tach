@@ -1,0 +1,201 @@
+# Token Tach — Cursor Rules
+# AI credit/cost tachometer: Tauri v2 + Rust + Svelte 5 + TypeScript
+
+# ============================================================================
+# PROJECT IDENTITY
+# ============================================================================
+# Token Tach is a macOS menubar/dock utility that monitors AI coding tool spend
+# in real time. Three-layer UI: tray numbers, hover breakdown, click for full
+# translucent HUD. Built with Tauri v2 (Rust backend) + Svelte 5 (frontend).
+#
+# Supported providers: Claude Code, Cursor, Windsurf, Copilot, Codex, Kilo Code
+# Stack: Tauri v2, Rust, Svelte 5, TypeScript, SQLite, OS Keychain
+
+# ============================================================================
+# TDD — TEST-DRIVEN DEVELOPMENT (NON-NEGOTIABLE)
+# ============================================================================
+# Every feature follows Red-Green-Refactor. No exceptions.
+#
+# 1. RED:    Write a failing test FIRST. Do not write implementation code
+#            without a corresponding test already in place.
+# 2. GREEN:  Write the MINIMUM code to make the test pass. No gold-plating.
+# 3. REFACTOR: Clean up while all tests stay green. No behavior changes.
+#
+# Test file naming:
+#   Rust:       src/<module>/tests.rs or tests/<module>_test.rs
+#   Svelte/TS:  src/lib/<module>/<module>.test.ts
+#   E2E:        tests/e2e/<feature>.test.ts
+#
+# Test requirements:
+# - Every public function MUST have at least one test
+# - Every provider adapter MUST have integration tests with mock responses
+# - Every Svelte component MUST have a component test
+# - Every Tauri command MUST have a unit test on the Rust side
+# - Edge cases: null/empty inputs, error states, boundary values
+# - Tests MUST be independent — no shared mutable state between tests
+# - Tests MUST be deterministic — no flaky tests, no sleep-based waits
+# - Name tests descriptively: test_<unit>_<scenario>_<expected_outcome>
+#
+# When asked to implement a feature:
+#   1. Ask: "What should the test look like?"
+#   2. Write the test file first
+#   3. Run the test — confirm it fails
+#   4. Implement until green
+#   5. Refactor
+#   6. Never skip step 1
+#
+# Coverage target: 80% minimum. 90%+ for provider adapters and core logic.
+
+# ============================================================================
+# SOLID PRINCIPLES + INTERFACE SEGREGATION (ISPF)
+# ============================================================================
+# S — Single Responsibility
+#   - One struct/module = one reason to change
+#   - Provider adapter: ONLY fetches usage data. Does NOT format, store, or display.
+#   - UI component: ONLY renders. Does NOT fetch data or manage state.
+#   - Storage layer: ONLY persists. Does NOT validate or transform.
+#
+# O — Open/Closed
+#   - New providers are added by implementing the ProviderAdapter trait.
+#     NEVER modify existing adapter code to add a new provider.
+#   - UI themes/views extend via composition, not modification.
+#
+# L — Liskov Substitution
+#   - Any ProviderAdapter implementation MUST be swappable without breaking
+#     the polling engine or UI. If it implements the trait, it works.
+#   - Mock adapters in tests MUST behave identically to real ones
+#     (same error types, same data shapes).
+#
+# I — Interface Segregation (STRICT ENFORCEMENT)
+#   - Traits MUST be small and focused. No god-traits.
+#   - Split capabilities:
+#       trait UsageFetcher    { fn fetch_usage(&self) -> Result<Usage>; }
+#       trait BalanceChecker  { fn check_balance(&self) -> Result<Balance>; }
+#       trait BurnRateCalc    { fn burn_rate(&self) -> Result<Rate>; }
+#   - A provider that doesn't support balance checking does NOT implement
+#     BalanceChecker. It is NOT forced to stub it out.
+#   - Frontend: component props MUST be minimal. Pass only what the component
+#     needs. Never pass an entire provider object when only name + rate needed.
+#   - Tauri commands: one command per action. No multi-purpose "do_thing"
+#     commands with mode flags.
+#
+# D — Dependency Inversion
+#   - Core logic depends on traits, NEVER on concrete provider implementations.
+#   - The polling engine accepts Vec<Box<dyn UsageFetcher>>, not
+#     Vec<AnthropicAdapter>.
+#   - Frontend fetches data via a typed API layer, not raw Tauri invoke calls.
+#   - Storage is accessed through a Repository trait, not direct SQLite calls.
+
+# ============================================================================
+# RUST RULES (src-tauri/)
+# ============================================================================
+# - Edition 2021, stable toolchain
+# - Use thiserror for error types, anyhow in application code only (not libs)
+# - Every public type and function has a doc comment
+# - No unwrap() in production code. Use expect() only with descriptive messages
+#   for truly impossible states. Prefer ? operator everywhere.
+# - No unsafe unless absolutely required and documented with a SAFETY comment
+# - Use #[cfg(test)] mod tests in the same file for unit tests
+# - Async: use tokio with Tauri's async runtime. No blocking calls on main thread.
+# - Secrets: NEVER log, print, serialize, or store API keys in plaintext.
+#   Access exclusively through the keyring crate.
+# - Provider adapters:
+#   - Each provider in its own module: src/providers/<name>/mod.rs
+#   - Implement the trait(s) it supports
+#   - Include a mock.rs for testing with realistic fixture data
+#   - Parse API responses into internal types — no leaking external API shapes
+# - Error handling: provider errors MUST be typed (RateLimit, AuthFailed,
+#   NetworkError, etc.) — not string messages
+# - All HTTP requests MUST have timeouts (30s default)
+# - Polling engine MUST handle individual provider failures gracefully —
+#   one provider down does NOT stop others
+
+# ============================================================================
+# SVELTE 5 + TYPESCRIPT RULES (src/)
+# ============================================================================
+# - Svelte 5 runes syntax ($state, $derived, $effect) — no legacy stores
+# - TypeScript strict mode, no `any` types
+# - Components:
+#   - One component per file
+#   - Props via $props() rune with TypeScript interface
+#   - Keep components under 150 lines — extract sub-components
+#   - Presentation components: no side effects, no data fetching
+#   - Container components: manage data flow, invoke Tauri commands
+# - Styling:
+#   - Scoped <style> blocks in components
+#   - CSS custom properties for theming (dark/light, translucency)
+#   - No inline styles except dynamic values (gauge angles, colors)
+# - State management:
+#   - Svelte 5 runes for local state
+#   - Shared state via context or a typed store module
+#   - No global mutable variables
+# - Tauri bridge:
+#   - All invoke() calls wrapped in typed async functions in src/lib/api/
+#   - Return types match Rust command signatures exactly
+#   - Handle errors at the call site — show user-friendly messages
+# - Accessibility:
+#   - ARIA labels on all interactive elements
+#   - Keyboard navigation for the HUD overlay
+#   - Sufficient contrast ratios even on translucent backgrounds
+
+# ============================================================================
+# ARCHITECTURE — CLEAN SEPARATION
+# ============================================================================
+# src-tauri/src/
+#   providers/         — one module per AI tool (trait implementations)
+#   polling/           — the engine that periodically fetches from providers
+#   storage/           — SQLite repository (behind trait)
+#   keychain/          — OS keychain access (behind trait)
+#   commands/          — Tauri commands (thin layer, delegates to services)
+#   models/            — shared types (Usage, Rate, Balance, Transaction)
+#   errors/            — typed error hierarchy
+#
+# src/
+#   lib/
+#     api/             — typed Tauri invoke wrappers
+#     components/
+#       tray/          — menubar display components
+#       hover/         — hover popover breakdown
+#       hud/           — full translucent overlay
+#       gauges/        — tachometer dials, sparklines, charts
+#       shared/        — buttons, badges, icons
+#     stores/          — reactive state (Svelte 5 runes)
+#     types/           — TypeScript interfaces matching Rust models
+#   app.html
+#   routes/
+#
+# tests/
+#   e2e/               — end-to-end tests (Playwright or WebdriverIO)
+#   fixtures/          — mock API responses per provider
+
+# ============================================================================
+# CODE QUALITY GATES
+# ============================================================================
+# Before ANY code is considered complete:
+#   [ ] Tests written FIRST (TDD red phase)
+#   [ ] Tests pass (TDD green phase)
+#   [ ] Code refactored with tests still green (TDD refactor phase)
+#   [ ] No compiler warnings (Rust: deny(warnings), TS: strict)
+#   [ ] No clippy warnings: cargo clippy -- -D warnings
+#   [ ] Formatted: cargo fmt && npx prettier --write .
+#   [ ] No secrets in code, logs, or comments
+#   [ ] Error states handled — not ignored, not panicked
+#   [ ] New public APIs have doc comments
+#   [ ] Interface segregation verified — no bloated traits or prop types
+
+# ============================================================================
+# WHAT NOT TO DO
+# ============================================================================
+# - Do NOT write implementation before tests
+# - Do NOT use any/unknown types in TypeScript
+# - Do NOT store API keys anywhere except OS keychain
+# - Do NOT log sensitive data (keys, tokens, auth headers)
+# - Do NOT make synchronous HTTP calls
+# - Do NOT create god-objects or god-traits
+# - Do NOT pass entire data models when a subset will do
+# - Do NOT ignore errors with _ = or .ok()
+# - Do NOT use string-typed errors
+# - Do NOT add dependencies without justification
+# - Do NOT write tests that depend on execution order
+# - Do NOT mock what you can test directly
+# - Do NOT commit without running the full test suite
