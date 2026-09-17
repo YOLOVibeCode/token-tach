@@ -1,7 +1,7 @@
 {
   "name": "token-tach",
-  "version": "0.0.1",
-  "description": "AI coding tool spend monitor \u2014 burn rate and cost tachometer for your menubar.",
+  "version": "0.0.2",
+  "description": "AI coding tool spend monitor — burn rate and cost tachometer for your menubar.",
   "type": "module",
   "scripts": {
     "start": "vite",

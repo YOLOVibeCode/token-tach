@@ -1,6 +1,6 @@
 [package]
 name = "token-tach"
-version = "0.0.1"
+version = "0.0.2"
 description = "AI coding tool spend monitor"
 authors = ["YOLOVibeCode"]
 edition = "2021"
